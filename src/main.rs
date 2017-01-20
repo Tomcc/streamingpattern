@@ -44,10 +44,12 @@ impl Pattern {
 struct GenerationContext {
     patterns: HashMap<Pattern, u16>,
     sortedPatterns: Vec<(u16, Pattern)>,
+
+    allowed_patterns: Vec<bool>,
 }
 
 impl GenerationContext {
-    fn from_path<P>(path: P, N: u8) -> Self where P:AsRef<Path>{
+    fn from_path<P>(path: P, out_w: usize, out_h: usize, N: u8) -> Self where P:AsRef<Path>{
         let img = image::open(path).unwrap();
 
         let (w, h) = img.dimensions();
@@ -64,16 +66,12 @@ impl GenerationContext {
         
         let mut g = GenerationContext {
             sortedPatterns: vec![],
+            allowed_patterns: vec![true; out_w * out_h * patterns.len() ],
             patterns: patterns,
         };
 
         g.sortedPatterns = g.patterns.iter().map(|(p, c)| (*c, (*p).clone())).collect();
-        g.sortedPatterns.sort_by(|&(a, _), &(b, _)| b.cmp(&a) ); 
-
-        for (c, _) in g.sortedPatterns.clone() {
-            println!("{:?}", c);
-        }
-
+        g.sortedPatterns.sort_by(|&(a, _), &(b, _)| b.cmp(&a) );
         g
     }
 }
@@ -111,7 +109,7 @@ fn main() {
     let input = "./assets/knot.png";
     let input_tex = Texture::from_path(input).unwrap();
 
-    let context = GenerationContext::from_path(input, N);
+    let context = GenerationContext::from_path(input, result_w as usize, result_h as usize, N);
 
     let mut gl = GlGraphics::new(opengl);
     while let Some(e) = window.next() {
