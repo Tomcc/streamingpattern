@@ -11,23 +11,54 @@ use opengl_graphics::*;
 use image::RgbaImage;
 use image::Rgba;
 use image::Pixel;
+use image::GenericImage;
 use std::path::Path;
+use std::collections::HashMap;
 use graphics::types::Color;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Hash)]
 struct Pattern {
-    count: usize,
     pixels: Vec<[u8; 4]>,
 }
 
-struct GenerationContext {
+impl Pattern {
+    fn from_area<I>(image: &I, x: u32, y: u32) -> Self where I: GenericImage {
+        Pattern {
+            pixels: vec![],
+        }
+    }
+}
 
+struct GenerationContext {
+    patterns: HashMap<Pattern, u16>,
 }
 
 impl GenerationContext {
-    fn from_path<P>(path: P) -> Self where P:AsRef<Path>{
-        let path = path.as_ref();
-        GenerationContext {}
+    fn from_path<P>(path: P, N: u8) -> Self where P:AsRef<Path>{
+        let img = image::open(path).unwrap();
+
+        let (w, h) = img.dimensions();
+
+        let mut patterns : HashMap<Pattern, u16> = HashMap::new();
+
+        for y in 1..(h-1) {
+            for x in 1..(w-1) {
+                let pattern = Pattern::from_area(&img, x, y);
+
+                if let Some(count) = patterns.get_mut(&pattern) {
+                    (*count) += 1;
+                    continue;
+                }
+                
+                patterns.insert(pattern, 1);
+            }
+        }
+        
+        println!("{:?}", patterns);
+
+        GenerationContext {
+            patterns: patterns
+        }
     }
 }
 
@@ -36,6 +67,7 @@ fn draw_state(buffer: &mut RgbaImage) {
 }
 
 fn main() {
+    const N: u8 = 3;
     let padding = 20;
     let input_w = 32;
     let result_w = 640;
@@ -63,7 +95,7 @@ fn main() {
     let input = "./assets/knot.png";
     let input_tex = Texture::from_path(input).unwrap();
 
-    let context = GenerationContext::from_path(input);
+    let context = GenerationContext::from_path(input, N);
 
     let mut gl = GlGraphics::new(opengl);
     while let Some(e) = window.next() {
