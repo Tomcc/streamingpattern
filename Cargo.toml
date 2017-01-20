@@ -7,5 +7,5 @@ authors = ["Tommaso Checchi <tommaso.checchi1@gmail.com>"]
 piston = "0.27.0"
 piston2d-graphics = "0.19.0"
 piston2d-opengl_graphics = "0.37.0"
-pistoncore-sdl2_window = "0.38.0"
+piston_window = "0.61.0"
 image = "0.12.1"

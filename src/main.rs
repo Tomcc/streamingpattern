@@ -1,14 +1,13 @@
 extern crate piston;
 extern crate graphics;
 extern crate opengl_graphics;
-extern crate sdl2_window;
+extern crate piston_window;
 extern crate image;
 
-use piston::event_loop::*;
 use piston::input::*;
 use piston::window::WindowSettings;
+use piston_window::PistonWindow;
 use opengl_graphics::*;
-use sdl2_window::Sdl2Window;
 use image::RgbaImage;
 use image::Rgba;
 use image::Pixel;
@@ -20,9 +19,9 @@ fn draw_state(buffer: &mut RgbaImage) {
 fn main() {
     let window_w = 640;
     let window_h = 480;
-
     let opengl = OpenGL::V3_2;
-    let mut window: Sdl2Window =
+
+    let mut window: PistonWindow =
         WindowSettings::new(
             "opengl_graphics: image_test",
             [window_w, window_h]
@@ -38,21 +37,19 @@ fn main() {
 
     let mut rust_logo = Texture::from_image(&buffer, &texture_desc);
     let mut gl = GlGraphics::new(opengl);
-    let mut events = window.events();
-    while let Some(e) = events.next(&mut window) {
+    
+    while let Some(e) = window.next() {
         use graphics::*;
 
         if let Some(args) = e.render_args() {
             gl.draw(args.viewport(), |c, g| {
-                let transform = c.transform.trans(0.0, 0.0);
-
                 clear([0.0; 4], g);
 
                 draw_state(&mut buffer);
 
                 rust_logo.update(&buffer);
 
-                image(&rust_logo, transform, g);
+                image(&rust_logo, c.transform, g);
             });
         }
     }
