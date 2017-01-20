@@ -12,25 +12,38 @@ use image::RgbaImage;
 use image::Rgba;
 use image::Pixel;
 use image::GenericImage;
+use image::DynamicImage;
 use std::path::Path;
 use std::collections::HashMap;
 use graphics::types::Color;
 
-#[derive(Debug, Eq, PartialEq, Hash)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 struct Pattern {
-    pixels: Vec<[u8; 4]>,
+    pixels: Vec<Rgba<u8>>,
 }
 
 impl Pattern {
-    fn from_area<I>(image: &I, x: u32, y: u32) -> Self where I: GenericImage {
+    fn from_area(image: &DynamicImage, x: u32, y: u32, N: u8) -> Self {
+        let N = N as u32;
+        let mut pixels = Vec::with_capacity((N*N) as usize);
+        let min_x = x - N / 2;
+        let min_y = y - N / 2;
+
+        for i in 0..N  {
+            for j in 0..N {
+                pixels.push( image.get_pixel(min_x + j, min_y + i ).to_rgba() );
+            }
+        }
+
         Pattern {
-            pixels: vec![],
+            pixels: pixels,
         }
     }
 }
 
 struct GenerationContext {
     patterns: HashMap<Pattern, u16>,
+    sortedPatterns: Vec<(u16, Pattern)>,
 }
 
 impl GenerationContext {
@@ -43,22 +56,25 @@ impl GenerationContext {
 
         for y in 1..(h-1) {
             for x in 1..(w-1) {
-                let pattern = Pattern::from_area(&img, x, y);
+                let pattern = Pattern::from_area(&img, x, y, N);
 
-                if let Some(count) = patterns.get_mut(&pattern) {
-                    (*count) += 1;
-                    continue;
-                }
-                
-                patterns.insert(pattern, 1);
+                *patterns.entry(pattern).or_insert(0) += 1;
             }
         }
         
-        println!("{:?}", patterns);
+        let mut g = GenerationContext {
+            sortedPatterns: vec![],
+            patterns: patterns,
+        };
 
-        GenerationContext {
-            patterns: patterns
+        g.sortedPatterns = g.patterns.iter().map(|(p, c)| (*c, (*p).clone())).collect();
+        g.sortedPatterns.sort_by(|&(a, _), &(b, _)| b.cmp(&a) ); 
+
+        for (c, _) in g.sortedPatterns.clone() {
+            println!("{:?}", c);
         }
+
+        g
     }
 }
 
